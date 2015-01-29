@@ -42,28 +42,32 @@ function problem_encountered
 function script_done
 {
     #clean_up
+    echo "done"
     exit 0
 }
 
-# function cmd_verify
-# {
+ function cmd_verify
+ {
     #Verify an APK:
     #$ jarsigner -verify –verbose [-certs] theapp.apk
-# }
-# 
-# function cmd_resign
-# {
-    #SIGN AN APK:
-    #$ jarsigner -verbose –keystore ~/Publishing/Resources/something.keystore unsigned.apk "mobility"
-# }
-# 
-# function cmd_zipalign
-# {
-    #make sure that the apk is signed??????
-    # ZIPALIGN THE SIGNED APK
-    # 
-    # $ zipalign -v 4 "signed.apk" "signed-zipaligned.apk"
-# }
+    echo "verify"
+ }
+ 
+ function cmd_resign
+ {
+   #SIGN AN APK:
+   #$ jarsigner -verbose –keystore ~/Publishing/Resources/something.keystore unsigned.apk "mobility"
+   echo "resign"
+ }
+ 
+ function cmd_zipalign
+ {
+   #make sure that the apk is signed??????
+   # ZIPALIGN THE SIGNED APK
+   # 
+   # $ zipalign -v 4 "signed.apk" "signed-zipaligned.apk"
+   echo "zipalign"
+ }
 
 
 #Install
@@ -84,20 +88,20 @@ else
 fi
 
 #if cmd was "help" or "h" show the usage page
-if [ "$cmd" = "help" -o "h" ]; then 
+if [ "$cmd" = "help" -o "$cmd" = "h" ]; then 
     cmd_help "$@"
     script_done
 fi
 
 #Commands
 
-if [ "$cmd" = "verify" -o "v" ]; then
+if [ "$cmd" = "verify" -o "$cmd" = "v" ]; then
     cmd_verify "$@"
     script_done
-elif [ "$cmd" = "resign" -o "r" ]; then
+elif [ "$cmd" = "resign" -o "$cmd" = "r" ]; then
     cmd_resign "$@"
     script_done
-elif [ "$cmd" = "zipalign" -o "r" ]; then
+elif [ "$cmd" = "zipalign" -o "$cmd" = "z" ]; then
     cmd_zipalign "$@"
     script_done
 fi
@@ -116,4 +120,3 @@ fi
 
 
 
-echo done
