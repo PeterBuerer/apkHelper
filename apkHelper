@@ -56,7 +56,12 @@ function script_done
  function cmd_resign
  {
    #SIGN AN APK:
-   #$ jarsigner -verbose –keystore ~/Publishing/Resources/something.keystore unsigned.apk "mobility"
+   #$ jarsigner -verbose –keystore ~/Publishing/Resources/something.keystore unsigned.apk "alias"
+
+#setup and parse args
+# Keystore Pass (...)
+# PrivateKey Pass (...)
+
    echo "resign"
  }
  
@@ -105,17 +110,13 @@ elif [ "$cmd" = "zipalign" -o "$cmd" = "z" ]; then
     cmd_zipalign "$@"
     script_done
 fi
+
 #verify -verbose? the.apk
 
 #resign the.apk
 
 #zipalign or just align or something 
 
-
-
-#setup and parse args
-# Keystore Pass (...)
-# PrivateKey Pass (...)
 
 
 
