@@ -1,0 +1,60 @@
+#!/bin/bash
+
+#called to end script in error
+function problem_encountered
+{
+    if [ "$1" != "" ]; then
+        echo "$1" >&2
+    fi
+    #clean_up
+    echo 'type "help" for usage page' >&2
+    exit 1
+}
+
+#Install
+#if jarsign and/or zipalign are not in any folders in the path, put them in /usr/bin
+
+
+
+###MAIN###
+
+cmd="$1"
+bd="$(pwd)"
+
+#if there was no command, exit
+if [ "$cmd" = "" ]; then
+    problem_encountered "no command"
+else
+    shift
+fi
+
+#Commands
+
+#verify -verbose? the.apk
+
+#resign the.apk
+
+#zipalign 
+
+
+
+#setup and parse args
+
+#Verify an APK:
+#$ jarsigner -verify –verbose [-certs] theapp.apk
+
+
+#SIGN AN APK:
+#$ jarsigner -verbose –keystore ~/Publishing/Resources/bmw-mobility-services.keystore unsigned.apk "mobility"
+
+# Keystore Pass (...)
+# PrivateKey Pass (...)
+
+
+# ZIPALIGN THE SIGNED APK
+# 
+# $ zipalign -v 4 "signed.apk" "signed-zipaligned.apk"
+
+
+
+echo done
