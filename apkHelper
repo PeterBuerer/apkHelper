@@ -1,5 +1,28 @@
 #!/bin/bash
 
+function cmd_help
+{
+    if [ "$1" = "" ]; then
+        help_help
+    elif [ "$1" = "-v" ]; then
+        #all help functions
+        echo
+    else
+        while [ "$1" != "" ]; do
+            #case "$1" in 
+            #[cC]ommand ) help_function;;
+            #* ) problem_encountered "Not a valid command";;
+            #esac
+            shift
+        done
+    fi
+}
+
+function help_help
+{
+    echo "This is of no help right now"
+}
+
 #called to end script in error
 function problem_encountered
 {
@@ -11,6 +34,38 @@ function problem_encountered
     exit 1
 }
 
+# function clean_up
+# {
+# }
+
+#called to end the script with success
+function script_done
+{
+    #clean_up
+    exit 0
+}
+
+# function cmd_verify
+# {
+    #Verify an APK:
+    #$ jarsigner -verify –verbose [-certs] theapp.apk
+# }
+# 
+# function cmd_resign
+# {
+    #SIGN AN APK:
+    #$ jarsigner -verbose –keystore ~/Publishing/Resources/something.keystore unsigned.apk "mobility"
+# }
+# 
+# function cmd_zipalign
+# {
+    #make sure that the apk is signed??????
+    # ZIPALIGN THE SIGNED APK
+    # 
+    # $ zipalign -v 4 "signed.apk" "signed-zipaligned.apk"
+# }
+
+
 #Install
 #if jarsign and/or zipalign are not in any folders in the path, put them in /usr/bin
 
@@ -19,7 +74,7 @@ function problem_encountered
 ###MAIN###
 
 cmd="$1"
-bd="$(pwd)"
+#bd="$(pwd)"
 
 #if there was no command, exit
 if [ "$cmd" = "" ]; then
@@ -28,32 +83,36 @@ else
     shift
 fi
 
+#if cmd was "help" or "h" show the usage page
+if [ "$cmd" = "help" -o "h" ]; then 
+    cmd_help "$@"
+    script_done
+fi
+
 #Commands
 
+if [ "$cmd" = "verify" -o "v" ]; then
+    cmd_verify "$@"
+    script_done
+elif [ "$cmd" = "resign" -o "r" ]; then
+    cmd_resign "$@"
+    script_done
+elif [ "$cmd" = "zipalign" -o "r" ]; then
+    cmd_zipalign "$@"
+    script_done
+fi
 #verify -verbose? the.apk
 
 #resign the.apk
 
-#zipalign 
+#zipalign or just align or something 
 
 
 
 #setup and parse args
-
-#Verify an APK:
-#$ jarsigner -verify –verbose [-certs] theapp.apk
-
-
-#SIGN AN APK:
-#$ jarsigner -verbose –keystore ~/Publishing/Resources/bmw-mobility-services.keystore unsigned.apk "mobility"
-
 # Keystore Pass (...)
 # PrivateKey Pass (...)
 
-
-# ZIPALIGN THE SIGNED APK
-# 
-# $ zipalign -v 4 "signed.apk" "signed-zipaligned.apk"
 
 
 
