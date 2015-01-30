@@ -64,6 +64,14 @@ function cmd_verify
    fi
 	
    #check to see if a valid file is passed to the method (just .jar and .apk????)
+
+   filetype="${1##*.}"
+   if [ "$filetype" = ".apk" ]; then
+       echo "is an apk"
+   else 
+       echo "not an apk"
+   fi 
+  
    #what happens if you shift and there are no more args???? will $1 just be ""
  
    #Verify an APK:
