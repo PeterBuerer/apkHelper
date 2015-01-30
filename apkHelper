@@ -65,14 +65,14 @@ function script_done
    echo "resign"
  }
  
- function cmd_zipalign
- {
-   #make sure that the apk is signed??????
-   # ZIPALIGN THE SIGNED APK
-   # 
-   # $ zipalign -v 4 "signed.apk" "signed-zipaligned.apk"
-   echo "zipalign"
- }
+function cmd_zipalign
+{
+  #make sure that the apk is signed??????
+  # ZIPALIGN THE SIGNED APK
+  # 
+  # $ zipalign -v 4 "signed.apk" "signed-zipaligned.apk"
+  echo "zipalign"
+}
 
 
 #Install
