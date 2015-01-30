@@ -53,12 +53,13 @@ function cmd_verify
 	# -verbose 
 
     #Question: Should this cmd accept -verbose and -v?
-    #Question: How do initialize string vars?
    opts="-verify"
    if [ "$1" = "-verbose" -o "$1" = "-v" ]; then     
        opts="$opts -verbose"
        shift
-   elif [ "$1" = "-certs" -o "$1" = "-c" ]; then
+   fi
+
+   if [ "$1" = "-certs" -o "$1" = "-c" ]; then
 	 opts="$opts -certs"
 	 shift
    fi
@@ -66,37 +67,72 @@ function cmd_verify
    #check to see if a valid file is passed to the method (just .jar and .apk????)
 
    filetype="${1##*.}"
-   if [ "$filetype" = ".apk" ]; then
+   if [ "$filetype" = "apk" ]; then
        echo "is an apk"
+       #$(jarsigner "$opts" "$1")                    ####uncomment when go time
+       #echo "jarsigner "$opts" "$1""
    else 
-       echo "not an apk"
+      problem_encountered  "file not an apk"
    fi 
-  
-   #what happens if you shift and there are no more args???? will $1 just be ""
  
    #Verify an APK:
    #$ jarsigner -verify –verbose [-certs] theapp.apk
-   echo "verify"
 }
  
-function cmd_resign
+function cmd_sign
 {
+    opts=""
+    if [ "$1" = "-verbose" -o "$1" = "-v" ]; then
+        opts="-verbose"
+        shift
+    fi
+   
+    #Question: How do you want these commands to be structured so that this script is more useful than just typing in the individual commands. Should the script just take a ton of args up front and the verify -> sign (if not signed) -> zipalign while still having the option to do each command individually?
+   
+    
   #SIGN AN APK:
   #$ jarsigner -verbose –keystore ~/Publishing/Resources/something.keystore unsigned.apk "alias"
+  
+  #check to make sure that the earl given leads to a .keystore ???
+  
+  #check to make sure that they give you an apk (or jar???)
+  #if no alias is provided, kick 'em
+  #Question: What should happen if a -keystore url is not specified?
+  
 
 #setup and parse args
 # Keystore Pass (...)
 # PrivateKey Pass (...)
 
-  echo "resign"
+  echo "sign"
 }
  
 function cmd_zipalign
 {
-  #make sure that the apk is signed??????
+  # make sure that the apk is signed? If you sign after zipalign, it messes up the alignment
+  # Question: Should -v be optional?
+
+  signed="" 
+  if [ "${1##*.}" = "apk" ]; then
+      #verify
+      #if passed
+        #signed="$1"
+  fi
+
+  #Question: Should we force the outfile to have a .apk extension?
+  if [ "$2" != ""]; then
+      #align with the two given names
+      #zipalign -v 4 "$signed" "$2"
+      echo "aligned to output file: "$2""
+  else
+      #align with a default output name
+      #zipalign -v 4 "$signed" "output-zipaligned.apk"
+      echo "aligned to output-zipaligned.apk"
+  fi
+
   # ZIPALIGN THE SIGNED APK
-  # 
   # $ zipalign -v 4 "signed.apk" "signed-zipaligned.apk"
+
   echo "zipalign"
 }
 
@@ -129,8 +165,8 @@ fi
 if [ "$cmd" = "verify" -o "$cmd" = "v" ]; then
     cmd_verify "$@"
     script_done
-elif [ "$cmd" = "resign" -o "$cmd" = "r" ]; then
-    cmd_resign "$@"
+elif [ "$cmd" = "sign" -o "$cmd" = "s" ]; then
+    cmd_sign "$@"
     script_done
 elif [ "$cmd" = "zipalign" -o "$cmd" = "z" ]; then
     cmd_zipalign "$@"
@@ -139,7 +175,7 @@ fi
 
 #verify -verbose? the.apk
 
-#resign the.apk
+#sign the.apk
 
 #zipalign or just align or something 
 
