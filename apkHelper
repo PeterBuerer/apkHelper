@@ -81,12 +81,71 @@ function cmd_verify
  
 function cmd_sign
 {
-    opts=""
-    if [ "$1" = "-verbose" -o "$1" = "-v" ]; then
-        opts="-verbose"
+    local keypass=""
+    local storepass=""
+    local keystore=""
+    local unsigned=""
+    local alias=""
+
+
+
+# check if option "allindir" then grab passes plus keystore path and fire that function
+
+    #DOC: do not need to explicitly use -keystore as long as you provide the path to a .keystore
+    if [ "$1" = "-keystore" -a "${2##*.}" = "keystore" ]; then
+       keystore="$2"
+       shift 2 
+   elif [ "${1##*.}" = "keystore" ]; then
+       keystore="$1"
+       shift
+   else
+       problem_encountered "missing keystore"
+   fi 
+   
+   #DOC: do not need to explicitly use -keypass and -storepass; if you don't, you will be prompted for them 
+    if [ "$1" = "-keypass" ]; then
+        keypass="$2"
+        shift 2
+    fi
+         
+    if [ "$1" = "-storepass" -o "$1" = "-s" ]; then
+        storepass="$2"
+        shift 2
+    fi
+
+    local filetype="${1##*.}"
+    if [ "$filetype" = "apk" ]; then
+        unsigned="$1"
         shift
+    else
+        problem_encountered "missing apk"
+    fi
+
+    if [ "$1" != "" ]; then
+        alias="$1"
+    else
+        problem_encountered "missing alias"
+    fi
+
+    if [ "$keypass" = "" ]; then
+        echo "Enter Keypass:" 
+        stty_orig=`stty -g` # save original terminal setting.
+        stty -echo          # turn-off echoing.
+        read keypass        # read the password
+        stty $stty_orig     # restore terminal setting.
     fi
    
+     if [ "$storepass" = "" ]; then
+        echo "Enter Storepass:" 
+        stty_orig=`stty -g` # save original terminal setting.
+        stty -echo          # turn-off echoing.
+        read storepass      # read the password
+        stty $stty_orig     # restore terminal setting.
+    fi
+
+  
+
+    "$(jarsigner -keystore "$keystore" -keypass "$keypass" -storepass "$storepass" "$unsigned" "$alias")"
     #Question: How do you want these commands to be structured so that this script is more useful than just typing in the individual commands. Should the script just take a ton of args up front and the verify -> sign (if not signed) -> zipalign while still having the option to do each command individually?
    
     
@@ -112,30 +171,78 @@ function cmd_zipalign
   # make sure that the apk is signed? If you sign after zipalign, it messes up the alignment
   # Question: Should -v be optional?
 
-  signed="" 
-  if [ "${1##*.}" = "apk" ]; then
+    unaligned="" 
+    if [ "${1##*.}" = "apk" ]; then
       #verify
+     #echo "verify"
       #if passed
         #signed="$1"
-  fi
+      unaligned="$1"
+      shift
+    else
+        problem_encountered "missing apk"
+    fi
 
-  #Question: Should we force the outfile to have a .apk extension?
-  if [ "$2" != ""]; then
-      #align with the two given names
-      #zipalign -v 4 "$signed" "$2"
-      echo "aligned to output file: "$2""
-  else
-      #align with a default output name
-      #zipalign -v 4 "$signed" "output-zipaligned.apk"
-      echo "aligned to output-zipaligned.apk"
-  fi
+
+    if [ "$1" = "" ]; then
+       aligned="${unaligned%%.*}-zipaligned.apk"
+    else
+      aligned="$1"
+    fi 
 
   # ZIPALIGN THE SIGNED APK
-  # $ zipalign -v 4 "signed.apk" "signed-zipaligned.apk"
+   zipalign 4 "$unaligned" "$aligned"
+   errorStatus=$? 
+  #Question: Should we force the outfile to have a .apk extension?
 
-  echo "zipalign"
+ #  isf [ "$aligned" != "" -a $errorStatus = 0 ]; then
+ #      echo "aligned to output file: "$aligned""
+  if [ $errorStatus = 0 ]; then
+      #align with a default output name made from input file name
+      echo "aligned to output file: $aligned"
+  else
+      problem_encountered "zipalign failed"
+  fi
 }
 
+function cmd_all_in_dir
+{
+    #sign and zipalign all apks in the given directory with the given keystore
+
+    #grep for .apk's
+    ls | grep .apk | while read -r line ; do
+        echo "Processing $line"
+        done
+    echo "all in dir"
+}
+
+
+function test
+{
+    # local keypass=""
+    # local storepass=""
+
+    # echo "Enter Keypass:" 
+    # stty_orig=`stty -g` # save original terminal setting.
+    # stty -echo          # turn-off echoing.
+    # read keypass        # read the password
+    # stty $stty_orig     # restore terminal setting.
+    # 
+    # echo "Enter Storepass:" 
+    # stty_orig=`stty -g` # save original terminal setting.
+    # stty -echo          # turn-off echoing.
+    # read storepass      # read the password
+    # stty $stty_orig     # restore terminal setting.
+
+    cmd_zipalign "test.apk" "output.apk"
+    #cmd_sign -keystore "$1" "test.apk" "$2"
+
+    # echo "$pass" | sed 's/\(!\)/\1/g'
+    # echo "$pass"
+    # echo "$pass\n" | sudo -S echo "pasword"
+    # echo $pass
+    # echo "test"
+}
 
 #Install
 #if jarsign and/or zipalign are not in any folders in the path, put them in /usr/bin
@@ -162,6 +269,11 @@ fi
 
 #Commands
 
+if [ "$cmd" = "test" -o "$cmd" = "t" ]; then
+    test "$@"
+    script_done
+fi
+
 if [ "$cmd" = "verify" -o "$cmd" = "v" ]; then
     cmd_verify "$@"
     script_done
@@ -171,6 +283,8 @@ elif [ "$cmd" = "sign" -o "$cmd" = "s" ]; then
 elif [ "$cmd" = "zipalign" -o "$cmd" = "z" ]; then
     cmd_zipalign "$@"
     script_done
+else
+    problem_encountered "invalid command"
 fi
 
 #verify -verbose? the.apk
