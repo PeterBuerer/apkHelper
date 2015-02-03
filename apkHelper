@@ -103,6 +103,18 @@ function apk_from_args
 #     done
 # }
 
+#returns versionName output by aapt
+function get_info
+{
+    if [ "${1##*.}" = apk ]; then
+        echo "Package Name: "$(aapt dump badging "$1" | sed -n "s/.*package: name=\'\(.*\)\'/\1/p")""
+        echo "Version Name: "$(aapt dump badging "$1" | sed -n "s/.*versionName=\'\(.*\)\'/\1/p")""
+        echo "Version Code: "$(aapt dump badging "$1" | sed -n "s/.*versionCode=\'\(.*\)\'/\1/p")""
+    else
+        problem_encountered "no apk given"
+    fi
+}
+
 function cmd_verify
 {
    #options: 
@@ -111,10 +123,10 @@ function cmd_verify
 
     #Question: Should this cmd accept -verbose and -v?
    opts="--verify"
-   if [ "$1" = "--verbose" -o "$1" = "-v" ]; then     
-       opts="$opts -verbose"
-       shift
-   fi
+   # if [ "$1" = "--verbose" -o "$1" = "-v" ]; then     
+   #     opts="$opts -verbose"
+   #     shift
+   # fi
 
    if [ "$1" = "--certs" -o "$1" = "-c" ]; then
 	 opts="$opts -certs"
@@ -405,6 +417,9 @@ elif [ "$cmd" = "zipalign" -o "$cmd" = "z" ]; then
     script_done
 elif [ "$cmd" = "all" -o "$cmd" = "a" ]; then
     cmd_all_in_dir "$@"
+    script_done
+elif [ "$cmd" = "info" -o "i" ]; then
+    get_info "$@"
     script_done
 else
     problem_encountered "invalid command"
