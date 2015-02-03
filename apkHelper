@@ -46,6 +46,63 @@ function script_done
     exit 0
 }
 
+function force_from_args
+{
+    while [ "$1" != "" ]; do
+        case "$1" in
+            -F | --force ) echo "--force"
+                           break;;
+            * )            shift
+        esac
+    done
+}
+
+function apk_from_args
+{
+    while [ "$1" != "" ]; do
+        local arg="${1##*.}"
+        case "$arg" in
+            "apk" ) echo "$1"
+                           break;;
+            * )            shift
+        esac
+    done
+}
+
+
+# function keypass_from_args
+# {
+#     while [ "$1" != "" ]; do
+#         case "$1" in
+#             --keypass ) echo "$2"
+#                         break;;
+#             * )         shift
+#         esac
+#     done
+# }
+# 
+# function storepass_from_args
+# {
+#     while [ "$1" != "" ]; do
+#         case "$1" in
+#             --storepass ) echo "$2"
+#                         break;;
+#             * )         shift
+#         esac
+#     done
+# }
+# 
+# function keystore_from_args
+# {
+#     while [ "$1" != "" ]; do
+#         case "$1" in
+#             --keystore ) echo "$2"
+#                         break;;
+#             * )         shift
+#         esac
+#     done
+# }
+
 function cmd_verify
 {
    #options: 
@@ -53,13 +110,13 @@ function cmd_verify
 	# -verbose 
 
     #Question: Should this cmd accept -verbose and -v?
-   opts="-verify"
-   if [ "$1" = "-verbose" -o "$1" = "-v" ]; then     
+   opts="--verify"
+   if [ "$1" = "--verbose" -o "$1" = "-v" ]; then     
        opts="$opts -verbose"
        shift
    fi
 
-   if [ "$1" = "-certs" -o "$1" = "-c" ]; then
+   if [ "$1" = "--certs" -o "$1" = "-c" ]; then
 	 opts="$opts -certs"
 	 shift
    fi
@@ -69,7 +126,7 @@ function cmd_verify
    filetype="${1##*.}"
    if [ "$filetype" = "apk" ]; then
        echo "is an apk"
-       #$(jarsigner "$opts" "$1")                    ####uncomment when go time
+       #jarsigner "$opts" "$1"                    ####uncomment when go time
        #echo "jarsigner "$opts" "$1""
    else 
       problem_encountered  "file not an apk"
@@ -86,13 +143,13 @@ function cmd_sign
     local keystore=""
     local unsigned=""
     local alias=""
-
-
+    local force="$(force_from_args "$@")"
+    
 
 # check if option "allindir" then grab passes plus keystore path and fire that function
 
     #DOC: do not need to explicitly use -keystore as long as you provide the path to a .keystore
-    if [ "$1" = "-keystore" -a "${2##*.}" = "keystore" ]; then
+    if [ "$1" = "--keystore" -a "${2##*.}" = "keystore" ]; then
        keystore="$2"
        shift 2 
    elif [ "${1##*.}" = "keystore" ]; then
@@ -103,12 +160,12 @@ function cmd_sign
    fi 
    
    #DOC: do not need to explicitly use -keypass and -storepass; if you don't, you will be prompted for them 
-    if [ "$1" = "-keypass" ]; then
+    if [ "$1" = "--keypass" ]; then
         keypass="$2"
         shift 2
     fi
          
-    if [ "$1" = "-storepass" -o "$1" = "-s" ]; then
+    if [ "$1" = "--storepass" -o "$1" = "-s" ]; then
         storepass="$2"
         shift 2
     fi
@@ -141,14 +198,22 @@ function cmd_sign
         stty -echo          # turn-off echoing.
         read storepass      # read the password
         stty $stty_orig     # restore terminal setting.
-    fi
+     fi
 
-  
+ #####make sure that the given new name for the signed archive is corrct 
 
-    "$(jarsigner -keystore "$keystore" -keypass "$keypass" -storepass "$storepass" "$unsigned" "$alias")"
+    "$(jarsigner -keystore "$keystore" -keypass "$keypass" -storepass "$storepass" -signedjar "${unsigned%%.*}-signed.apk" "$unsigned" "$alias")"
     #Question: How do you want these commands to be structured so that this script is more useful than just typing in the individual commands. Should the script just take a ton of args up front and the verify -> sign (if not signed) -> zipalign while still having the option to do each command individually?
    
-    
+   local errorStatus=$?
+   if [ $errorStatus = 0 ];then
+      echo "$unsigned signed to output file: "${unsigned%%.*}-signed""
+   elif [ "$force" = "--force" ]; then
+       echo "signing of $unsigned failed"
+   else
+       problem_encountered "signing of $unsigned failed"
+   fi
+       
   #SIGN AN APK:
   #$ jarsigner -verbose –keystore ~/Publishing/Resources/something.keystore unsigned.apk "alias"
   
@@ -169,25 +234,31 @@ function cmd_sign
 function cmd_zipalign
 {
   # make sure that the apk is signed? If you sign after zipalign, it messes up the alignment
-  # Question: Should -v be optional?
+    local force="$(force_from_args "$@")"
 
-    unaligned="" 
+    local aligned=""
+
+    local unaligned="" 
     if [ "${1##*.}" = "apk" ]; then
       #verify
-     #echo "verify"
       #if passed
-        #signed="$1"
+        #aligned="$1"
       unaligned="$1"
       shift
     else
         problem_encountered "missing apk"
     fi
+####DOC: will append .apk if there isn't one for the specified output file 
+#Question: will zipalign just give the given name the same extension as the unaligned file?
 
-
-    if [ "$1" = "" ]; then
-       aligned="${unaligned%%.*}-zipaligned.apk"
+    if [ "$1" != "" ]; then
+        if [ "${1##*.}" != apk ]; then
+            aligned="$1.apk"
+        else
+            aligned="$1"
+        fi
     else
-      aligned="$1"
+      aligned="${unaligned%%.*}-zipaligned.apk"
     fi 
 
   # ZIPALIGN THE SIGNED APK
@@ -195,11 +266,10 @@ function cmd_zipalign
    errorStatus=$? 
   #Question: Should we force the outfile to have a .apk extension?
 
- #  isf [ "$aligned" != "" -a $errorStatus = 0 ]; then
- #      echo "aligned to output file: "$aligned""
   if [ $errorStatus = 0 ]; then
-      #align with a default output name made from input file name
       echo "aligned to output file: $aligned"
+  elif [ "$force" = "--force" ]; then
+      echo "zipalign of "$unaligned" failed"
   else
       problem_encountered "zipalign failed"
   fi
@@ -207,11 +277,60 @@ function cmd_zipalign
 
 function cmd_all_in_dir
 {
-    #sign and zipalign all apks in the given directory with the given keystore
+    #first check to see if any .apk files are in the current directory
 
-    #grep for .apk's
-    ls | grep .apk | while read -r line ; do
-        echo "Processing $line"
+    local force="$(force_from_args "$@")"
+                             
+    ls | grep .apk 2>&1 >/dev/null
+    errorStatus=$?
+
+    if [ $errorStatus != 0 ]; then
+        problem_encountered "an error occured or there are no apk's in working directory"
+    fi
+
+    local keystore=""
+    if [ "$1" = "--keystore" -a "${2##*.}" = "keystore" ]; then
+        keystore="$2"
+        shift 2 
+    elif [ "${1##*.}" = "keystore" ]; then
+        keystore="$1"
+        shift
+    else
+        problem_encountered "missing keystore"
+    fi 
+    
+    local keypass="" 
+    if [ "$keypass" = "" ]; then
+        echo "Enter Keypass:" 
+        stty_orig=`stty -g` # save original terminal setting.
+        stty -echo          # turn-off echoing.
+        read keypass        # read the password
+        stty $stty_orig     # restore terminal setting.
+    fi
+
+    local storepass=""
+    if [ "$storepass" = "" ]; then
+       echo "Enter Storepass:" 
+       stty_orig=`stty -g` # save original terminal setting.
+       stty -echo          # turn-off echoing.
+       read storepass      # read the password
+       stty $stty_orig     # restore terminal setting.
+    fi
+
+    local alias=""
+    if [ "$1" != "" ]; then
+        alias="$1"
+    else
+        problem_encountered "missing alias"
+    fi
+
+
+    #Question: Is it worth it to allow for a directory other than the current directory to be specified for this?
+    #sign and zipalign all apks in the given directory with the given keystore
+    ls | grep .apk | while read apk ; do
+        echo "Processing $apk"
+        cmd_sign --keystore "$keystore" --keypass "$keypass" --storepass "$storepass" "$apk" "$alias" "$force"
+        cmd_zipalign "${apk%%.*}-signed.apk" "$force"
         done
     echo "all in dir"
 }
@@ -234,14 +353,15 @@ function test
     # read storepass      # read the password
     # stty $stty_orig     # restore terminal setting.
 
-    cmd_zipalign "test.apk" "output.apk"
+    #cmd_zipalign "test.apk" "test-output.apk" -F
     #cmd_sign -keystore "$1" "test.apk" "$2"
+    cmd_all_in_dir "$1" "$2"
 
     # echo "$pass" | sed 's/\(!\)/\1/g'
     # echo "$pass"
     # echo "$pass\n" | sudo -S echo "pasword"
     # echo $pass
-    # echo "test"
+    echo "test"
 }
 
 #Install
@@ -252,7 +372,7 @@ function test
 ###MAIN###
 
 cmd="$1"
-#bd="$(pwd)"
+bd="$(pwd)"
 
 #if there was no command, exit
 if [ "$cmd" = "" ]; then
@@ -278,10 +398,13 @@ if [ "$cmd" = "verify" -o "$cmd" = "v" ]; then
     cmd_verify "$@"
     script_done
 elif [ "$cmd" = "sign" -o "$cmd" = "s" ]; then
-    cmd_sign "$@"
-    script_done
+   cmd_sign "$@" 
+   script_done
 elif [ "$cmd" = "zipalign" -o "$cmd" = "z" ]; then
     cmd_zipalign "$@"
+    script_done
+elif [ "$cmd" = "all" -o "$cmd" = "a" ]; then
+    cmd_all_in_dir "$@"
     script_done
 else
     problem_encountered "invalid command"
