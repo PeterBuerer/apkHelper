@@ -107,9 +107,9 @@ function apk_from_args
 function get_info
 {
     if [ "${1##*.}" = apk ]; then
-        echo "Package Name: "$(aapt dump badging "$1" | sed -n "s/.*package: name=\'\(.*\)\'/\1/p")""
-        echo "Version Name: "$(aapt dump badging "$1" | sed -n "s/.*versionName=\'\(.*\)\'/\1/p")""
-        echo "Version Code: "$(aapt dump badging "$1" | sed -n "s/.*versionCode=\'\(.*\)\'/\1/p")""
+        echo "Package Name: "$(aapt dump badging "$1" | sed -n "s/.*package: name='\(.*\)' versionC.*/\1/1p")""
+        echo "Version Name: "$(aapt dump badging "$1" | sed -n "s/.*versionName='\(.*\)'/\1/p")""
+        echo "Version Code: "$(aapt dump badging "$1" | sed -n "s/.*versionCode='\(.*\)' versionN.*/\1/p")""
     else
         problem_encountered "no apk given"
     fi
