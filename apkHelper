@@ -42,7 +42,6 @@ function problem_encountered
 function script_done
 {
     #clean_up
-    echo "done"
     exit 0
 }
 
@@ -69,47 +68,33 @@ function apk_from_args
     done
 }
 
-
-# function keypass_from_args
-# {
-#     while [ "$1" != "" ]; do
-#         case "$1" in
-#             --keypass ) echo "$2"
-#                         break;;
-#             * )         shift
-#         esac
-#     done
-# }
-# 
-# function storepass_from_args
-# {
-#     while [ "$1" != "" ]; do
-#         case "$1" in
-#             --storepass ) echo "$2"
-#                         break;;
-#             * )         shift
-#         esac
-#     done
-# }
-# 
-# function keystore_from_args
-# {
-#     while [ "$1" != "" ]; do
-#         case "$1" in
-#             --keystore ) echo "$2"
-#                         break;;
-#             * )         shift
-#         esac
-#     done
-# }
+function first_apk_in_dir
+{
+    echo "$(ls | grep "\.apk" | head -1)"
+}
 
 #returns versionName output by aapt
-function get_info
+function cmd_summary
 {
-    if [ "${1##*.}" = apk ]; then
-        echo "Package Name: "$(aapt dump badging "$1" | sed -n "s/.*package: name='\(.*\)' versionC.*/\1/1p")""
-        echo "Version Name: "$(aapt dump badging "$1" | sed -n "s/.*versionName='\(.*\)'/\1/p")""
-        echo "Version Code: "$(aapt dump badging "$1" | sed -n "s/.*versionCode='\(.*\)' versionN.*/\1/p")""
+    local firstApk="$(first_apk_in_dir)"
+    local apk=""
+
+    if [ "$1" != "" ]; then
+        apk="$1"
+    elif [ "$firstApk" != "" ]; then
+        apk="$firstApk"
+    fi
+
+    if [ "${apk##*.}" = apk ]; then
+        echo
+        echo "**********************************"
+        echo
+        echo "  Package Name: "$(aapt dump badging "$apk" | sed -n "s/.*package: name='\(.*\)' versionC.*/\1/1p")""
+        echo "  Version Name: "$(aapt dump badging "$apk" | sed -n "s/.*versionName='\(.*\)'/\1/p")""
+        echo "  Version Code: "$(aapt dump badging "$apk" | sed -n "s/.*versionCode='\(.*\)' versionN.*/\1/p")""
+        echo
+        echo "**********************************"
+        echo
     else
         problem_encountered "no apk given"
     fi
@@ -120,25 +105,24 @@ function cmd_verify
    #options: 
 	# -certs
 	# -verbose 
-
+   if [ "$1" = "--certs" -o "$1" = "-c" ]; then
+	 opts="$opts -certs"
+	 shift
+   fi
     #Question: Should this cmd accept -verbose and -v?
-   opts="--verify"
+   opts="-verify"
    # if [ "$1" = "--verbose" -o "$1" = "-v" ]; then     
    #     opts="$opts -verbose"
    #     shift
    # fi
 
-   if [ "$1" = "--certs" -o "$1" = "-c" ]; then
-	 opts="$opts -certs"
-	 shift
-   fi
+
 	
    #check to see if a valid file is passed to the method (just .jar and .apk????)
 
    filetype="${1##*.}"
    if [ "$filetype" = "apk" ]; then
-       echo "is an apk"
-       #jarsigner "$opts" "$1"                    ####uncomment when go time
+       jarsigner "$opts" -verbose "$1"                    ####uncomment when go time
        #echo "jarsigner "$opts" "$1""
    else 
       problem_encountered  "file not an apk"
@@ -367,7 +351,7 @@ function test
 
     #cmd_zipalign "test.apk" "test-output.apk" -F
     #cmd_sign -keystore "$1" "test.apk" "$2"
-    cmd_all_in_dir "$1" "$2"
+    #cmd_all_in_dir "$1" "$2"
 
     # echo "$pass" | sed 's/\(!\)/\1/g'
     # echo "$pass"
@@ -377,9 +361,7 @@ function test
 }
 
 #Install
-#if jarsign and/or zipalign are not in any folders in the path, put them in /usr/bin
-
-
+# put binary dependencies in /usr/bin
 
 ###MAIN###
 
@@ -418,8 +400,8 @@ elif [ "$cmd" = "zipalign" -o "$cmd" = "z" ]; then
 elif [ "$cmd" = "all" -o "$cmd" = "a" ]; then
     cmd_all_in_dir "$@"
     script_done
-elif [ "$cmd" = "info" -o "i" ]; then
-    get_info "$@"
+elif [ "$cmd" = "summary" ]; then
+    cmd_summary "$@"
     script_done
 else
     problem_encountered "invalid command"
