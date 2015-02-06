@@ -102,33 +102,24 @@ function cmd_summary
 
 function cmd_verify
 {
-   #options: 
-	# -certs
-	# -verbose 
+   local certs=""
    if [ "$1" = "--certs" -o "$1" = "-c" ]; then
-	 opts="$opts -certs"
+	 certs="-certs"
 	 shift
    fi
     #Question: Should this cmd accept -verbose and -v?
-   opts="-verify"
-   # if [ "$1" = "--verbose" -o "$1" = "-v" ]; then     
-   #     opts="$opts -verbose"
-   #     shift
-   # fi
 
-
-	
-   #check to see if a valid file is passed to the method (just .jar and .apk????)
-
-   filetype="${1##*.}"
+   local filetype="${1##*.}"
    if [ "$filetype" = "apk" ]; then
-       jarsigner "$opts" -verbose "$1"                    ####uncomment when go time
-       #echo "jarsigner "$opts" "$1""
+       if [ "$certs" != "" ]; then
+           jarsigner -verify -verbose "$certs" "$1"
+       else
+           jarsigner -verify -verbose "$1"
+       fi
    else 
       problem_encountered  "file not an apk"
    fi 
  
-   #Verify an APK:
    #$ jarsigner -verify –verbose [-certs] theapp.apk
 }
  
@@ -198,7 +189,7 @@ function cmd_sign
 
  #####make sure that the given new name for the signed archive is corrct 
 
-    "$(jarsigner -keystore "$keystore" -keypass "$keypass" -storepass "$storepass" -signedjar "${unsigned%%.*}-signed.apk" "$unsigned" "$alias")"
+    jarsigner -keystore "$keystore" -keypass "$keypass" -storepass "$storepass" -signedjar "${unsigned%%.*}-signed.apk" "$unsigned" "$alias"
     #Question: How do you want these commands to be structured so that this script is more useful than just typing in the individual commands. Should the script just take a ton of args up front and the verify -> sign (if not signed) -> zipalign while still having the option to do each command individually?
    
    local errorStatus=$?
@@ -218,11 +209,6 @@ function cmd_sign
   #check to make sure that they give you an apk (or jar???)
   #if no alias is provided, kick 'em
   #Question: What should happen if a -keystore url is not specified?
-  
-
-#setup and parse args
-# Keystore Pass (...)
-# PrivateKey Pass (...)
 
   echo "sign"
 }
