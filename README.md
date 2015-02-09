@@ -65,13 +65,13 @@ Signs the *apk* with the *keystore* and *alias*.
 
 **Sign Options:**  
 
-** --keystore /path/to/file.keystore **  
+**--keystore /path/to/file.keystore**  
 specifies the keystore with which to sign
 
-** --keypass keypass **  
+**--keypass keypass**  
 keypass for the keystore
 
-** --storepass storepass **  
+**--storepass storepass**  
 storepass for the keystore
 
 The **--keystore** option is not necessary as long as a path to the keystore is provided after the sign command.
@@ -109,18 +109,18 @@ Outputs the version name, version code, and package name of *apk*. If no *apk* i
 
 Signs and zipaligns all files in the current directory with *keystore* and *alias*.
 
-**All Options: **  
+**All Options:**  
 
-** --keystore /path/to/file.keystore **  
+**--keystore /path/to/file.keystore**  
 specifies the keystore with which to sign
 
-** --keypass keypass **  
+**--keypass keypass**  
 keypass for the keystore
 
-** --storepass storepass **  
+**--storepass storepass**  
 storepass for the keystore
 
-** --force **  
+**--force**  
 must appear at end of command. will let the command keep going with the next apk in the directory if the current apk fails signing or zipalignment
 
 The **--keystore** option is not necessary as long as a path to the keystore is provided after the sign command.

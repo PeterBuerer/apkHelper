@@ -6,13 +6,21 @@ function cmd_help
         help_help
     elif [ "$1" = "-v" ]; then
         #all help functions
+        help_sign
+        help_zipalign
+        help_verify
+        help_summary
         echo
     else
         while [ "$1" != "" ]; do
-            #case "$1" in 
-            #[cC]ommand ) help_function;;
-            #* ) problem_encountered "Not a valid command";;
-            #esac
+            case "$1" in 
+                [hH]elp ) help_help;;
+                [sS]ign ) help_sign;;
+                [zZ]ipalign ) help_zipalign;;
+                [vV]erify ) help_verify;;
+                [sS]ummary ) help_summary;;
+                * ) problem_encountered "Not a valid command";;
+            esac
             shift
         done
     fi
@@ -20,7 +28,79 @@ function cmd_help
 
 function help_help
 {
-    echo "This is of no help right now"
+    echo
+    echo '*****HELP*****
+
+apkHelper help [ -v ] [ commands... ]
+
+Displays usage information for the different commands.
+
+If the -v option is present it shows the usage information for all the commands.'
+
+    echo "Commands:   sign   zipalign   verify   summary"
+    echo
+}
+
+function help_sign
+{
+    echo
+    echo '*****SIGN*****
+
+apkHelper sign [ keystore ] [ options ] [ apk ] [ alias ]
+
+Signs the apk with the keystore and alias.
+
+Options:
+
+[ --keystore ] use to specify the keystore with which to sign
+
+[ --keypass ] keypass for the keystore
+
+[ --storepass ] storepass for the keystore'
+
+    echo
+}
+
+function help_zipalign
+{
+    echo
+    echo '*****ZIPALIGN*****
+
+apkHelper zipalign [ inputfile ] [ outputfile ]
+
+Zipaligns inputFile on a 32 bit alignment and saves the aligned file as outputFile.apk. For example, if the outputFile was myOutput or myOutput.apk, the name of the aligned file would be myOutput.apk.
+
+If no outputFile is given, the aligned apk will be saved as inputFile-zipaligned.apk. For example, myApp.apk would be named myApp-zipaligned.apk.'
+
+    echo
+}
+
+function help_verify
+{
+    echo
+    echo '*****VERIFY*****
+
+apkHelper verify [ --certs ] [ apk ]
+
+Verifies the signature of the apk.
+
+Options:
+
+[ --certs ] provides certificate information about the apk'
+
+    echo
+}
+
+function help_summary
+{
+    echo
+    echo '*****SUMMARY*****
+
+apkHelper summary [ apk ]
+
+Outputs the version name, version code, and package name of apk. If no apk is given, it uses the first apk (alphabetically) in the current directory.'
+
+    echo 
 }
 
 #called to end script in error
@@ -350,7 +430,6 @@ function test
 # put binary dependencies in /usr/bin
 
 ###MAIN###
-
 cmd="$1"
 bd="$(pwd)"
 
